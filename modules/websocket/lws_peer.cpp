@@ -44,8 +44,8 @@
 void LWSPeer::set_wsi(struct lws *p_wsi) {
 	ERR_FAIL_COND(wsi != NULL);
 
-	rbw.resize(16);
-	rbr.resize(16);
+	rbw.resize(24);
+	rbr.resize(24);
 	wsi = p_wsi;
 };
 

@@ -45,7 +45,7 @@ class LWSPeer : public WebSocketPeer {
 
 private:
 	enum {
-		PACKET_BUFFER_SIZE = 65536 - 5 // 4 bytes for the size, 1 for the type
+		PACKET_BUFFER_SIZE = 16777216 - 5 // 4 bytes for the size, 1 for the type
 	};
 
 	uint8_t packet_buffer[PACKET_BUFFER_SIZE];

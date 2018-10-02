@@ -44,7 +44,7 @@ class EMWSPeer : public WebSocketPeer {
 
 private:
 	enum {
-		PACKET_BUFFER_SIZE = 65536 - 5 // 4 bytes for the size, 1 for for type
+		PACKET_BUFFER_SIZE = 16777216 - 5 // 4 bytes for the size, 1 for for type
 	};
 
 	int peer_sock;

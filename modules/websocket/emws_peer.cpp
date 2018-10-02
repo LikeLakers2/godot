@@ -164,7 +164,7 @@ EMWSPeer::EMWSPeer() {
 	peer_sock = -1;
 	queue_count = 0;
 	_was_string = false;
-	in_buffer.resize(16);
+	in_buffer.resize(24);
 	write_mode = WRITE_MODE_BINARY;
 };
 
