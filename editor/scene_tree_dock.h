@@ -115,7 +115,7 @@ class SceneTreeDock : public VBoxContainer {
 	Control *remote_tree;
 
 	HBoxContainer *tool_hbc;
-	void _tool_selected(int p_tool, bool p_confirm_override = false);
+	void _tool_selected(int p_tool, bool p_confirm_override = false, String p_property = "script");
 
 	EditorData *editor_data;
 	EditorSelection *editor_selection;
@@ -169,7 +169,7 @@ class SceneTreeDock : public VBoxContainer {
 
 	void _node_selected();
 	void _node_renamed();
-	void _script_created(Ref<Script> p_script);
+	void _script_created(Ref<Script> p_script, StringName p_property);
 	void _script_creation_closed();
 
 	void _delete_confirm();
@@ -248,7 +248,7 @@ public:
 
 	void replace_node(Node *p_node, Node *p_by_node, bool p_keep_properties = true, bool p_remove_old = true);
 
-	void open_script_dialog(Node *p_for_node);
+	void open_script_dialog(Object *p_for_node, StringName p_object_property);
 
 	ScriptCreateDialog *get_script_create_dialog() { return script_create_dialog; }
 

@@ -311,7 +311,7 @@ bool SceneTreeDock::_track_inherit(const String &p_target_scene_path, Node *p_de
 	return result;
 }
 
-void SceneTreeDock::_tool_selected(int p_tool, bool p_confirm_override) {
+void SceneTreeDock::_tool_selected(int p_tool, bool p_confirm_override, String p_property) {
 
 	current_option = p_tool;
 
@@ -383,27 +383,11 @@ void SceneTreeDock::_tool_selected(int p_tool, bool p_confirm_override) {
 				break;
 			}
 
-			List<Node *> selection = editor_selection->get_selected_node_list();
-			if (selection.empty())
-				break;
+			Object *selected = EditorNode::get_singleton()->get_inspector()->get_edited_object();
 
-			Node *selected = scene_tree->get_selected();
-			if (!selected)
-				selected = selection.front()->get();
+			Ref<Script> existing = selected->get(p_property);
 
-			Ref<Script> existing = selected->get_script();
-
-			String path = selected->get_filename();
-			if (path == "") {
-				String root_path = editor_data->get_edited_scene_root()->get_filename();
-				if (root_path == "") {
-					path = String("res://").plus_file(selected->get_name());
-				} else {
-					path = root_path.get_base_dir().plus_file(selected->get_name());
-				}
-			}
-
-			String inherits = selected->get_class();
+			String inherits;
 			if (existing.is_valid()) {
 				for (int i = 0; i < ScriptServer::get_language_count(); i++) {
 					ScriptLanguage *l = ScriptServer::get_language(i);
@@ -417,8 +401,47 @@ void SceneTreeDock::_tool_selected(int p_tool, bool p_confirm_override) {
 						break;
 					}
 				}
+			} else if (p_property == "script") {
+				inherits = selected->get_class();
+			} else {
+				// Perhaps this could be a property hint at some point?
+				inherits = "Reference";
 			}
-			script_create_dialog->connect("script_created", this, "_script_created");
+
+			String path = "";
+			if (Object::cast_to<Node>(selected)) {
+				path = Object::cast_to<Node>(selected)->get_filename().get_basename();
+			} else if (Object::cast_to<Resource>(selected)) {
+				path = Object::cast_to<Resource>(selected)->get_path().get_basename();
+			}
+			if (path == "") {
+				String selected_name;
+				if (Object::cast_to<Node>(selected)) {
+					selected_name = Object::cast_to<Node>(selected)->get_name();
+				} else if (Object::cast_to<Resource>(selected)) {
+					selected_name = Object::cast_to<Resource>(selected)->get_name();
+					if (selected_name == "")
+						selected_name = selected->get_class();
+				} else {
+					selected_name = selected->get_class();
+				}
+
+				String root_path = editor_data->get_edited_scene_root()->get_filename();
+				if (root_path == "") {
+					path = String("res://").plus_file(selected_name);
+				} else {
+					path = root_path.get_base_dir().plus_file(selected_name);
+				}
+			}
+
+			if (p_property != "script") {
+				// path = <node_or_scene_name>.<property_name>.
+				// The extra period at the end is to prevent the property name from being seen as the type by ScriptCreateDialog
+				String path_property_name = p_property.replace(":", ".").replace("/", ".").replace("\\", ".");
+				path = path + "." + path_property_name + ".";
+			}
+
+			script_create_dialog->connect("script_created", this, "_script_created", varray(p_property));
 			script_create_dialog->connect("popup_hide", this, "_script_creation_closed", varray(), CONNECT_ONESHOT);
 			script_create_dialog->config(inherits, path);
 			script_create_dialog->popup_centered();
@@ -1625,22 +1648,19 @@ void SceneTreeDock::_do_reparent(Node *p_new_parent, int p_position_in_parent, V
 	editor_data->get_undo_redo().commit_action();
 }
 
-void SceneTreeDock::_script_created(Ref<Script> p_script) {
+void SceneTreeDock::_script_created(Ref<Script> p_script, StringName p_property) {
 
-	List<Node *> selected = editor_selection->get_selected_node_list();
+	Object *edited_object = EditorNode::get_singleton()->get_inspector()->get_edited_object();
 
-	if (selected.empty())
-		return;
-
+	// This bit unfortunately doesn't account for MultiNodeEdit, but I'm not sure how to deal with that
 	editor_data->get_undo_redo().create_action(TTR("Attach Script"));
-	for (List<Node *>::Element *E = selected.front(); E; E = E->next()) {
 
-		Ref<Script> existing = E->get()->get_script();
-		editor_data->get_undo_redo().add_do_method(E->get(), "set_script", p_script.get_ref_ptr());
-		editor_data->get_undo_redo().add_undo_method(E->get(), "set_script", existing);
-		editor_data->get_undo_redo().add_do_method(this, "_update_script_button");
-		editor_data->get_undo_redo().add_undo_method(this, "_update_script_button");
-	}
+	Ref<Script> existing = edited_object->get(p_property);
+	editor_data->get_undo_redo().add_do_property(edited_object, p_property, p_script.get_ref_ptr());
+	editor_data->get_undo_redo().add_undo_property(edited_object, p_property, existing);
+
+	editor_data->get_undo_redo().add_do_method(this, "_update_script_button");
+	editor_data->get_undo_redo().add_undo_method(this, "_update_script_button");
 
 	editor_data->get_undo_redo().commit_action();
 
@@ -2363,10 +2383,12 @@ void SceneTreeDock::_focus_node() {
 	}
 }
 
-void SceneTreeDock::open_script_dialog(Node *p_for_node) {
+void SceneTreeDock::open_script_dialog(Object *p_for_object, StringName p_object_property) {
 
-	scene_tree->set_selected(p_for_node, false);
-	_tool_selected(TOOL_ATTACH_SCRIPT);
+	// TODO: Make this an object maybe?
+	if (Object::cast_to<Node>(p_for_object))
+		scene_tree->set_selected(Object::cast_to<Node>(p_for_object), false);
+	_tool_selected(TOOL_ATTACH_SCRIPT, false, p_object_property);
 }
 
 void SceneTreeDock::add_remote_tree_editor(Control *p_remote) {
@@ -2504,7 +2526,7 @@ void SceneTreeDock::_feature_profile_changed() {
 
 void SceneTreeDock::_bind_methods() {
 
-	ClassDB::bind_method(D_METHOD("_tool_selected"), &SceneTreeDock::_tool_selected, DEFVAL(false));
+	ClassDB::bind_method(D_METHOD("_tool_selected"), &SceneTreeDock::_tool_selected, DEFVAL(false), DEFVAL("script"));
 	ClassDB::bind_method(D_METHOD("_create"), &SceneTreeDock::_create);
 	ClassDB::bind_method(D_METHOD("_node_reparent"), &SceneTreeDock::_node_reparent);
 	ClassDB::bind_method(D_METHOD("_set_owners"), &SceneTreeDock::_set_owners);
