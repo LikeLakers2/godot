@@ -773,6 +773,7 @@ String ResourceLoader::_path_remap(const String &p_path, bool *r_translation_rem
 
 	if (path_remaps.has(new_path)) {
 		new_path = path_remaps[new_path];
+		print_line("hello");
 	}
 
 	if (new_path == p_path) { //did not remap

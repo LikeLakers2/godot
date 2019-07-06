@@ -808,6 +808,7 @@ Error GDScript::load_source_code(const String &p_path) {
 
 	PoolVector<uint8_t> sourcef;
 	Error err;
+	print_line(p_path);
 	FileAccess *f = FileAccess::open(p_path, FileAccess::READ, &err);
 	if (err) {
 

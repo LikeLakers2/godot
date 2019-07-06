@@ -995,6 +995,18 @@ void ProjectSettings::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("property_get_revert", "name"), &ProjectSettings::property_get_revert);
 
 	ClassDB::bind_method(D_METHOD("save_custom", "file"), &ProjectSettings::_save_custom_bnd);
+
+	ClassDB::bind_method(D_METHOD("load_path_remaps"), &ProjectSettings::load_path_remaps);
+	ClassDB::bind_method(D_METHOD("clear_path_remaps"), &ProjectSettings::clear_path_remaps);
+}
+
+void ProjectSettings::load_path_remaps() {
+	ResourceLoader::clear_path_remaps();
+	ResourceLoader::load_path_remaps();
+}
+
+void ProjectSettings::clear_path_remaps() {
+	ResourceLoader::clear_path_remaps();
 }
 
 ProjectSettings::ProjectSettings() {

@@ -160,6 +160,9 @@ public:
 
 	bool has_custom_feature(const String &p_feature) const;
 
+	void load_path_remaps();
+	void clear_path_remaps();
+
 	ProjectSettings();
 	~ProjectSettings();
 };
