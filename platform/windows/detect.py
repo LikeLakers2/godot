@@ -300,9 +300,12 @@ def configure_msvc(env: "SConsEnvironment"):
 
     ## Compile/link flags
 
+    ccache_path = os.environ.get("CCACHE", "")
+    if ccache_path != "":
+        ccache_path = ccache_path + " "
     if env["use_llvm"]:
-        env["CC"] = "clang-cl"
-        env["CXX"] = "clang-cl"
+        env["CC"] = ccache_path + "clang-cl"
+        env["CXX"] = ccache_path + "clang-cl"
         env["LINK"] = "lld-link"
         env["AR"] = "llvm-lib"
 

@@ -14,9 +14,3 @@ runs:
     - name: Purge files before timestamp
       shell: sh
       run: misc/scripts/purge_cache.py ${{ env.CACHE_TIMESTAMP }} "${{ inputs.scons-cache }}"
-
-    - name: Save SCons cache directory
-      uses: actions/cache/save@v4
-      with:
-        path: ${{ inputs.scons-cache }}
-        key: ${{ inputs.cache-name }}|${{ github.ref_name }}|${{ github.sha }}

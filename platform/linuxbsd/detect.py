@@ -105,9 +105,12 @@ def configure(env: "SConsEnvironment"):
         env["use_llvm"] = True
 
     if env["use_llvm"]:
+        ccache_path = os.environ.get("CCACHE", "")
+        if ccache_path != "":
+            ccache_path = ccache_path + " "
         if "clang++" not in os.path.basename(env["CXX"]):
-            env["CC"] = "clang"
-            env["CXX"] = "clang++"
+            env["CC"] = ccache_path + "clang"
+            env["CXX"] = ccache_path + "clang++"
         env.extra_suffix = ".llvm" + env.extra_suffix
 
     if env["linker"] != "default":
